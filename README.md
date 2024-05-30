@@ -1,4 +1,4 @@
 # single-RL
-##PPO demo: 
+## PPO demo: 
 env/pong_ppo.py
-##environment guide:
+## environment guide:
