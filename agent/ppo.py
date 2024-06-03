@@ -5,17 +5,22 @@ from PIL import Image
 import torch
 from torch.nn import functional as F
 from torch import nn
+from util.parameters import Parameters
 
 class PPO(nn.Module):
     def __init__(self):
         super(PPO, self).__init__()
 
-        self.gamma = 0.99
-        self.eps_clip = 0.1
+        params = Parameters()
+        self.gamma = params.gamma
+        self.eps_clip = params.eps_clip
 
+        self.layers1_num = params.layers1_num
+        self.layers2_num = params.layers2_num
+        self.out_num = params.out_num
         self.layers = nn.Sequential(
-            nn.Linear(6000, 512), nn.ReLU(),
-            nn.Linear(512, 2),
+            nn.Linear(self.layers1_num, self.layers2_num), nn.ReLU(),
+            nn.Linear(self.layers2_num, self.out_num),
         )
 
     def convert_action(self, action):

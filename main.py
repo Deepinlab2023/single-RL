@@ -1,19 +1,17 @@
-import random
-import gym
 import numpy as np
-from PIL import Image
-import torch
-from torch.nn import functional as F
-from torch import nn
 from agent.ppo import PPO
-from util.train import PPOtrainer
+from train.train import PPOtrainer
 from env.pong import PongEnv
-def main():
+from util.parameters import Parameters
+from util.logger import Figure
+
+def main_ppo():
     # Environment Initialization
     env_name = 'PongNoFrameskip-v4'
-    gpu = False
-    nb_episodes = 128 #100000
-    batch_size = 8 #24576
+    #gpu = False
+    params = Parameters()
+    nb_episodes = params.nb_episodes  # 100000
+    batch_size = params.batch_size  # 24576
     env = PongEnv(env_name)
     env.reset()
 
@@ -27,5 +25,5 @@ def main():
     env.close()
 
 if __name__ == "__main__":
-    main()
+    main_ppo()
 
