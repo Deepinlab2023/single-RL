@@ -1,17 +1,16 @@
 class Parameters:
-    def __init__(self,):
-        self.nb_episodes = 4000  # 100000, 4000 is enough for Pong
-        self.batch_size = 24576  # 24576, 1536
-        # PPO
+    def __init__(self):
+        self.nb_episodes = 1000
+        self.batch_size = 64
         self.gamma = 0.99
-        self.eps_clip = 0.1
-        self.layers1_num = 6000
-        self.layers2_num = 512
-        self.out_num = 2
-        # training
-        self.lr = 1e-3
+        self.eps_clip = 0.2
+        self.layers1_num = 4  # CartPole state space dimension
+        self.layers2_num = 128
+        self.out_num = 2  # CartPole action space dimension
+        self.lr = 3e-4
         self.ep = 10
-        self.t = 190000
-        self.training_times = 5
-        self.save_episode = 5  # save model every 5 episodes
-        self.test_episode = 10  # test every 10 episodes
+        self.t = 1000
+        self.training_times = 10
+        self.save_episode = 50
+        self.test_episode = 25
+        self.test_interval = 10

@@ -23,8 +23,11 @@ class PPO(nn.Module):
             nn.Linear(self.layers2_num, self.out_num),
         )
 
-    def convert_action(self, action):
-        return action + 2
+    def convert_action(self, action, env_name):
+        if env_name == 'Pong-v0':
+            return action + 2
+        else:
+            return action # No need to adjust for other environments
 
     def forward(self, d_obs, action=None, action_prob=None, advantage=None, deterministic=False):
         if action is None:

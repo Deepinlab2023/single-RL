@@ -2,41 +2,46 @@ import random
 import gym
 import numpy as np
 from PIL import Image
-import torch
+import torch as th
 from torch.nn import functional as F
 from torch import nn
 from util.parameters import Parameters
 from util.logger import Figure
 
 class PPOtrainer:
+    def __init__(self, env_name):
+        self.env_name = env_name
+
     def train(self, env, agent, nb_episodes, batch_size):
         tester = Figure()
         params = Parameters()
-        opt = torch.optim.Adam(agent.parameters(), lr=params.lr)
+        opt = th.optim.Adam(agent.parameters(), lr=params.lr)
         reward_sum_running_avg = None
         reward_sum_running_avg_history = []
         training_results = []
+        test_results = []
+
         for it in range(nb_episodes):
             d_obs_history, action_history, action_prob_history, reward_history = [], [], [], []
-            for ep in range(params.ep):
-                obs, prev_obs = env.reset(), None  # obs is a tuple and prev_obs is None
-                for t in range(params.t):
-                    # env.render()
+            episode_rewards = 0
 
-                    # d_obs = agent.pre_process(np.array(obs), np.array(prev_obs))
+            for ep in range(params.ep):
+                obs, prev_obs = env.reset(), None
+                for t in range(params.t):
                     d_obs = env.pre_process(obs, prev_obs)
 
-                    with torch.no_grad():
+                    with th.no_grad():
                         action, action_prob = agent(d_obs)
 
-                    prev_obs = obs  # if obs is a tuple, prev_obs is a tuple; if obs is a matrix, prev_obs is a matrix
-                    obs, reward, done, _, info = env.step(
-                        agent.convert_action(action))  # now obs is outputted as a matrix
+                    prev_obs = obs
+                    obs, reward, done, _ = env.step(agent.convert_action(action, self.env_name))
 
                     d_obs_history.append(d_obs)
                     action_history.append(action)
                     action_prob_history.append(action_prob)
                     reward_history.append(reward)
+
+                    episode_rewards += reward
 
                     if done:
                         reward_sum = sum(reward_history[-t:])
@@ -47,42 +52,44 @@ class PPOtrainer:
                         reward_sum_running_avg_history.append(reward_sum_running_avg)
                         break
 
+            training_results.append(episode_rewards / params.ep) # Average reward per episode
+
             # compute advantage
             R = 0
             discounted_rewards = []
 
             for r in reward_history[::-1]:
-                if r != 0: R = 0  # scored/lost a point in pong, so reset reward sum
+                if self.env_name == 'Pong-v0':
+                   if r != 0: R = 0 # scored/lost a point in pong, so reset reward sum 
                 R = r + agent.gamma * R
                 discounted_rewards.insert(0, R)
 
-            discounted_rewards = torch.FloatTensor(discounted_rewards)
+            discounted_rewards = th.FloatTensor(discounted_rewards)
             discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / discounted_rewards.std()
 
             # update policy
             for _ in range(params.training_times):
-                #batch_size = 24576
                 idxs = random.sample(range(len(action_history)), batch_size)
-                d_obs_batch = torch.cat([d_obs_history[idx] for idx in idxs], 0)
-                action_batch = torch.LongTensor([action_history[idx] for idx in idxs])
-                action_prob_batch = torch.FloatTensor([action_prob_history[idx] for idx in idxs])
-                advantage_batch = torch.FloatTensor([discounted_rewards[idx] for idx in idxs])
+                d_obs_batch = th.cat([d_obs_history[idx] for idx in idxs], 0)
+                action_batch = th.LongTensor([action_history[idx] for idx in idxs])
+                action_prob_batch = th.FloatTensor([action_prob_history[idx] for idx in idxs])
+                advantage_batch = th.FloatTensor([discounted_rewards[idx] for idx in idxs])
 
                 opt.zero_grad()
                 loss = agent(d_obs_batch, action_batch, action_prob_batch, advantage_batch)
                 loss.backward()
                 opt.step()
 
-            if it % params.test_episode == 0:  # test every 10 episodes
-                training_reward = tester.test(env, agent)
-                print('Training reward for episode %d: %.2f' % (it, training_reward))
-                training_results.append(training_reward)
+            if it % params.test_interval == 0:
+                test_reward = tester.test(env, agent, self.env_name)
+                test_results.append(test_reward)
+                print('Training reward for episode %d: %.2f' % (it, test_reward))
 
-            if it % params.save_episode == 0:  # save every 5 episodes
-                torch.save(agent.state_dict(), 'params.ckpt')
+            if it % params.save_episode == 0:
+                # th.save(agent.state_dict(), 'params.ckpt')
+                pass
 
-        #return reward_sum_running_avg_history, training_results
-        return training_results
+        return training_results, test_results
 
 class DQNtrainer:
     def train(self, env, agent, nb_episodes, batch_size):
