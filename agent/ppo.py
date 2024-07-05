@@ -18,9 +18,19 @@ class PPO(nn.Module):
         self.layers1_num = params.layers1_num
         self.layers2_num = params.layers2_num
         self.out_num = params.out_num
+        #actor
         self.layers = nn.Sequential(
             nn.Linear(self.layers1_num, self.layers2_num), nn.ReLU(),
             nn.Linear(self.layers2_num, self.out_num),
+            #nn.Softmax(dim=-1)
+        )
+        #critic
+        self.critic = nn.Sequential(
+            nn.Linear(self.layers1_num, self.layers2_num),
+            nn.Tanh(),
+            nn.Linear(self.layers2_num, self.layers2_num),
+            nn.Tanh(),
+            nn.Linear(self.layers2_num, 1)
         )
 
     def convert_action(self, action, env_name):
@@ -28,6 +38,15 @@ class PPO(nn.Module):
             return action + 2
         else:
             return action # No need to adjust for other environments
+
+    def forward_critic(self, state):
+        state_value = self.critic(state)
+        return state_value
+
+    def critic_loss(self,state_val, discounted_rewards):
+        loss = nn.MSELoss(reduction='mean')
+        loss = loss(state_val, discounted_rewards)
+        return loss
 
     def forward(self, d_obs, action=None, action_prob=None, advantage=None, deterministic=False):
         if action is None:
@@ -49,7 +68,7 @@ class PPO(nn.Module):
         '''
 
         # PPO
-        vs = np.array([[1., 0.], [0., 1.]])
+        vs = np.array([[1., 0.], [0., 1.]])  # TODO
         ts = torch.FloatTensor(vs[action.cpu().numpy()])
 
         logits = self.layers(d_obs)
