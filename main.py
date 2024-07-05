@@ -27,8 +27,6 @@ def main_ppo():
     env.close()
     
 def run_experiment():
-    num_trials = 5
-
     env_name = 'CartPole-v1'
     env = CartPoleEnv(env_name)
     env.reset()
@@ -36,6 +34,7 @@ def run_experiment():
     params = Parameters()
     nb_episodes = params.nb_episodes
     batch_size = params.batch_size
+    num_trials = params.num_trials
 
     all_train_returns = []
     all_test_returns = []
