@@ -57,7 +57,8 @@ class Utils:
 
         # Plot density plot of training returns
         plt.figure(figsize=(12, 6))
-        sns.kdeplot(mean_train_returns, fill=True, label='Density Plot')
+        #sns.kdeplot(mean_train_returns, fill=True, label='Density Plot')
+        sns.kdeplot(mean_train_returns, label='Density Plot')
         plt.xlabel('Training Return')
         plt.ylabel('Density')
         plt.title('Density Plot of Training Returns')
@@ -79,7 +80,8 @@ class Utils:
 
         # Plot density plot of test returns
         plt.figure(figsize=(12, 6))
-        sns.kdeplot(mean_test_returns, fill=True, label='Density Plot')
+        #sns.kdeplot(mean_test_returns, fill=True, label='Density Plot')
+        sns.kdeplot(mean_test_returns, label='Density Plot')
         plt.xlabel('Test Return')
         plt.ylabel('Density')
         plt.title('Density Plot of Test Returns')
