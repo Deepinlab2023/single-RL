@@ -1,4 +1,6 @@
-class Parameters:
+import math
+
+class ParametersPPO:
     def __init__(self):
         self.nb_episodes = 1000  # or 500
         self.batch_size = 128  # or 64
@@ -17,3 +19,24 @@ class Parameters:
         self.test_trials = 10  # test 10 times and get the average result
         self.test_interval = 10  # test every 10 episodes
         self.num_trials = 5
+
+class ParametersA2C:
+    def __init__(self):
+        self.num_trials = 5
+        self.training_value = 2000
+        self.batch_size = 10
+
+        self.config_A2C = {
+            'gamma': 0.99,
+            'actor_hidden_dim': 256,
+            'critic_hidden_dim': 256,
+            'value_dim': 1,
+            'alpha': 1e-3,
+            'beta': 1e-3,
+            'num_training_episodes': math.ceil(self.training_value / self.batch_size),
+            'num_batch_episodes': self.batch_size,
+            't_max': 1000,
+            'tau': 0.005,
+            'test_interval': 20,
+            'num_test_episodes': 10
+        }

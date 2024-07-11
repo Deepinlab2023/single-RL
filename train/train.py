@@ -5,8 +5,15 @@ from PIL import Image
 import torch as th
 from torch.nn import functional as F
 from torch import nn
+from torch.distributions import Categorical
+
+from agent.a2c import A2CActor
+from critics.a2c import A2CCritic
+from helpers.a2c_helper import to_tensor
+from helpers.a2c_bp import BatchTraining
 from util.parameters import Parameters
 from util.logger import Figure
+from util.a2c_logger import a2c_test
 
 class PPOtrainer:
     def __init__(self, env_name):
@@ -130,5 +137,105 @@ class DQNtrainer:
         print("DQNtrainer")
 
 class A2Ctrainer:
-    def train(self, env, agent, nb_episodes, batch_size):
-        print("A2Ctrainer")
+    def __init__(self, env_name):
+        self.env_name = env_name
+
+    def train(self, env, state_dim, action_dim, action_offset ,gamma, actor_hidden_dim, critic_hidden_dim,
+            value_dim, alpha, beta, num_training_episodes ,num_batch_episodes, t_max, tau,
+            test_interval, num_test_episodes):
+        
+        actor = A2CActor(state_dim, action_dim, actor_hidden_dim)
+        critic = A2CCritic(state_dim, critic_hidden_dim, value_dim)
+
+        optimizer_actor = th.optim.Adam(actor.parameters(), lr=alpha)
+        optimizer_critic = th.optim.Adam(critic.parameters(), lr=beta)
+
+        episode_rewards = []
+        test_rewards = []
+
+        episode = 0
+
+        for te in range(num_training_episodes):
+            batch_buffer = []
+            batch_rtrns = []
+            for e in range(num_batch_episodes):
+                state = env.reset()
+                prev_state = None
+                total_reward = 0
+                done = False
+                t = 0
+                buffer = []
+
+                while not done and (t < t_max):
+
+                    if 'PongNoFrameskip-v4' in self.env_name:
+                        state_tensor = env.pre_process(state, prev_state)
+                    else:
+                        state_tensor = to_tensor(state)
+                    logits = actor(state_tensor)
+                    action, dist = actor.action_sampler(logits)
+                    converted_action = action.item() + action_offset
+                    next_state, reward, done, info = env.step(converted_action)
+                    if 'PongNoFrameskip-v4' in self.env_name:
+                        next_state_tensor = env.pre_process(next_state, state)
+                    else:
+                        next_state_tensor = to_tensor(next_state)
+
+                    buffer.append((state_tensor, action, reward, next_state_tensor))
+                    prev_state = state
+                    state = next_state
+                    total_reward += reward
+                    t+=1
+
+                episode_rewards.append(total_reward)
+                episode += 1
+
+                rtrns = []
+                if done:
+                    R = 0
+                else:
+                    R = critic(to_tensor(state)).detach().item()
+
+                for _, _, reward, _ in reversed(buffer):
+                    R = reward + gamma * R
+                    rtrns.append(R)
+                rtrns.reverse()
+
+                batch_buffer.extend(buffer)
+                batch_rtrns.extend(rtrns)
+
+                if episode % test_interval == 0:
+                    actor_state = actor.state_dict()
+
+                    test_reward = a2c_test(env, actor, num_test_episodes, t_max, action_offset)
+                    test_rewards.append(test_reward)
+
+                    actor.load_state_dict(actor_state)
+
+            batch_training = BatchTraining()
+            batch_states, batch_actions, batch_rewards, batch_next_states, batch_rtrns = batch_training.collate_batch(batch_buffer, batch_rtrns)
+
+            # Update Critic
+            optimizer_critic.zero_grad()
+            V = critic(batch_states)
+            # Critic Loss
+            critic_loss = (batch_rtrns - V).pow(2).mean()
+            critic_loss.backward()
+            optimizer_critic.step()
+
+            # Update Actor
+            optimizer_actor.zero_grad()
+            logits = actor(batch_states)
+            action_dist = Categorical(logits=logits)
+            log_probs = action_dist.log_prob(batch_actions)
+            entropies = action_dist.entropy()
+            V = critic(batch_states).detach()
+            advantage = (batch_rtrns - V).detach()
+
+            # Actor Loss
+            actor_loss = -(log_probs * advantage).mean() - tau * entropies.mean()
+            actor_loss.backward()
+            optimizer_actor.step()
+
+        print("Algorithm done")
+        return episode_rewards, test_rewards
