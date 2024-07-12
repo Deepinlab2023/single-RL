@@ -65,7 +65,14 @@ class PPO(nn.Module):
         '''
 
         # PPO
-        vs = np.array([[1., 0.], [0., 1.]])  # TODO
+        vs = np.array([[1., 0.], [0., 1.]])  # TODO - depends on the environment
+        '''
+        vs - Action the action dimension
+        e.g. if we had actions left and right - and [1,0] would select action left
+        3d
+        [1,0,0], [0,1,0], [0,0,1]
+        changes based on action_dim
+        '''
         ts = torch.FloatTensor(vs[action.cpu().numpy()])
 
         logits = self.layers(d_obs)

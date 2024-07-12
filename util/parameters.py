@@ -19,6 +19,7 @@ class ParametersPPO:
         self.test_trials = 10  # test 10 times and get the average result
         self.test_interval = 10  # test every 10 episodes
         self.num_trials = 5
+        self.Load_save_result = False
 
 class ParametersA2C:
     def __init__(self):
