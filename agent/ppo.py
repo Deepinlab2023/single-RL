@@ -1,17 +1,14 @@
-import random
-import gym
 import numpy as np
-from PIL import Image
 import torch
 from torch.nn import functional as F
 from torch import nn
-from util.parameters import Parameters
+from util.parameters import ParametersPPO
 
 class PPO(nn.Module):
     def __init__(self):
         super(PPO, self).__init__()
 
-        params = Parameters()
+        params = ParametersPPO()
         self.gamma = params.gamma
         self.eps_clip = params.eps_clip
 

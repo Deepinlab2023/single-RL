@@ -1,7 +1,5 @@
 import torch as th
 import numpy as np
-from env.cartpole import CartPoleEnv
-from env.pong import PongEnv
 
 # Helper function to convert numpy arrays to tensors
 def to_tensor(x):

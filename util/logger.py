@@ -1,11 +1,5 @@
-import random
-import gym
-import numpy as np
-from PIL import Image
 import torch as th
-from torch.nn import functional as F
-from torch import nn
-from util.parameters import Parameters
+from util.parameters import ParametersPPO
 
 class Figure:
     def test(self, env, agent, env_name):
@@ -13,7 +7,7 @@ class Figure:
         obs = obs[0]
         reward_sum = 0
         reward_history = []
-        params = Parameters()
+        params = ParametersPPO()
         for t in range(params.t):
             d_obs = env.pre_process(obs, prev_obs)
 

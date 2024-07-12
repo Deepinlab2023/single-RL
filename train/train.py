@@ -1,17 +1,12 @@
 import random
-import gym
-import numpy as np
-from PIL import Image
 import torch as th
-from torch.nn import functional as F
-from torch import nn
 from torch.distributions import Categorical
 
 from agent.a2c import A2CActor
 from critics.a2c import A2CCritic
 from helpers.a2c_helper import to_tensor
 from helpers.a2c_bp import BatchTraining
-from util.parameters import Parameters
+from util.parameters import ParametersPPO
 from util.logger import Figure
 from util.a2c_logger import a2c_test
 
@@ -21,7 +16,7 @@ class PPOtrainer:
 
     def train(self, env, agent, nb_episodes, batch_size):
         tester = Figure()
-        params = Parameters()
+        params = ParametersPPO()
         opt = th.optim.Adam([
             {'params': agent.layers.parameters(), 'lr': params.lr},
             {'params': agent.critic.parameters(), 'lr': params.lr_c}

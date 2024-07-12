@@ -1,5 +1,4 @@
 import numpy as np
-import torch as th
 import matplotlib.pyplot as plt
 import scipy.stats as st
 import seaborn as sns
