@@ -2,7 +2,8 @@ import os
 import numpy as np
 from util.benchmarker import Utils
 from util.parameters import ParametersPPO
-from agent.ppo import PPO
+from agent.ppo import Actor
+from critics.ppo import Critic
 from train.train import PPOtrainer
 
 class PPOrunner():
@@ -23,10 +24,11 @@ class PPOrunner():
 
             for trial in range(num_trials):
                 print(f"Trial: {trial+1}")
-                agent_ppo = PPO()
+                actor_ppo = Actor(params.layers1_num, params.layers2_num, params.out_num)
+                critic_ppo = Critic(params.layers1_num, params.layers2_num)
                 trainer_ppo = PPOtrainer(self.env.env_name)
 
-                train_rewards, test_rewards = trainer_ppo.train(self.env, agent_ppo, nb_episodes, batch_size)
+                train_rewards, test_rewards = trainer_ppo.train(self.env, actor_ppo, critic_ppo, nb_episodes, batch_size)
                 all_train_returns.append(train_rewards)
                 all_test_returns.append(test_rewards)
             np.save('all_train_returns.npy', all_train_returns)
